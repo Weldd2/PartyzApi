@@ -4,31 +4,54 @@ namespace App\Entity;
 
 use ApiPlatform\Metadata\ApiResource;
 use App\Repository\PartyRepository;
+use Symfony\Component\Serializer\Annotation\Groups;
+use Doctrine\Common\Collections\ArrayCollection;
+use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
 
 #[ORM\Entity(repositoryClass: PartyRepository::class)]
-#[ApiResource]
+#[ApiResource(
+    normalizationContext: ['groups' => ['party:read']],
+)]
 class Party
 {
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
+    #[Groups(["party:read"])]
     private ?int $id = null;
 
     #[ORM\Column(length: 255)]
+    #[Groups(["party:read"])]
     private ?string $title = null;
 
     #[ORM\Column(length: 255)]
+    #[Groups(["party:read"])]
     private ?string $address = null;
 
     #[ORM\Column(length: 255)]
+    #[Groups(["party:read"])]
     private ?string $postalCode = null;
 
     #[ORM\Column(length: 255)]
+    #[Groups(["party:read"])]
     private ?string $city = null;
 
     #[ORM\Column]
+    #[Groups(["party:read"])]
     private ?\DateTime $date = null;
+
+    /**
+     * @var Collection<int, User>
+     */
+    #[ORM\ManyToMany(targetEntity: User::class, mappedBy: 'parties')]
+    #[Groups(["party:read"])]
+    private Collection $members;
+
+    public function __construct()
+    {
+        $this->members = new ArrayCollection();
+    }
 
     public function getId(): ?int
     {
@@ -91,6 +114,33 @@ class Party
     public function setDate(\DateTime $date): static
     {
         $this->date = $date;
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, User>
+     */
+    public function getMembers(): Collection
+    {
+        return $this->members;
+    }
+
+    public function addMember(User $member): static
+    {
+        if (!$this->members->contains($member)) {
+            $this->members->add($member);
+            $member->addParty($this);
+        }
+
+        return $this;
+    }
+
+    public function removeMember(User $member): static
+    {
+        if ($this->members->removeElement($member)) {
+            $member->removeParty($this);
+        }
 
         return $this;
     }
