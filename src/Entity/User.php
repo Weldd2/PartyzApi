@@ -49,9 +49,16 @@ class User implements UserInterface
     #[ORM\ManyToMany(targetEntity: Party::class, inversedBy: 'members')]
     private Collection $parties;
 
+    /**
+     * @var Collection<int, ShoppingListContribution>
+     */
+    #[ORM\OneToMany(targetEntity: ShoppingListContribution::class, mappedBy: 'contributor', orphanRemoval: true)]
+    private Collection $shoppingListContributions;
+
     public function __construct()
     {
         $this->parties = new ArrayCollection();
+        $this->shoppingListContributions = new ArrayCollection();
     }
 
     public function getId(): ?int
@@ -156,6 +163,36 @@ class User implements UserInterface
     public function removeParty(Party $party): static
     {
         $this->parties->removeElement($party);
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, ShoppingListContribution>
+     */
+    public function getShoppingListContributions(): Collection
+    {
+        return $this->shoppingListContributions;
+    }
+
+    public function addShoppingListContribution(ShoppingListContribution $shoppingListContribution): static
+    {
+        if (!$this->shoppingListContributions->contains($shoppingListContribution)) {
+            $this->shoppingListContributions->add($shoppingListContribution);
+            $shoppingListContribution->setContributor($this);
+        }
+
+        return $this;
+    }
+
+    public function removeShoppingListContribution(ShoppingListContribution $shoppingListContribution): static
+    {
+        if ($this->shoppingListContributions->removeElement($shoppingListContribution)) {
+            // set the owning side to null (unless already changed)
+            if ($shoppingListContribution->getContributor() === $this) {
+                $shoppingListContribution->setContributor(null);
+            }
+        }
 
         return $this;
     }

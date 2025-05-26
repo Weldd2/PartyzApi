@@ -48,9 +48,17 @@ class Party
     #[Groups(["party:read"])]
     private Collection $members;
 
+    /**
+     * @var Collection<int, ShoppingListItem>
+     */
+    #[ORM\OneToMany(targetEntity: ShoppingListItem::class, mappedBy: 'party', orphanRemoval: true)]
+    #[Groups(["party:read"])]
+    private Collection $shoppingList;
+
     public function __construct()
     {
         $this->members = new ArrayCollection();
+        $this->shoppingList = new ArrayCollection();
     }
 
     public function getId(): ?int
@@ -140,6 +148,36 @@ class Party
     {
         if ($this->members->removeElement($member)) {
             $member->removeParty($this);
+        }
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, ShoppingListItem>
+     */
+    public function getShoppingList(): Collection
+    {
+        return $this->shoppingList;
+    }
+
+    public function addShoppingList(ShoppingListItem $shoppingList): static
+    {
+        if (!$this->shoppingList->contains($shoppingList)) {
+            $this->shoppingList->add($shoppingList);
+            $shoppingList->setParty($this);
+        }
+
+        return $this;
+    }
+
+    public function removeShoppingList(ShoppingListItem $shoppingList): static
+    {
+        if ($this->shoppingList->removeElement($shoppingList)) {
+            // set the owning side to null (unless already changed)
+            if ($shoppingList->getParty() === $this) {
+                $shoppingList->setParty(null);
+            }
         }
 
         return $this;
